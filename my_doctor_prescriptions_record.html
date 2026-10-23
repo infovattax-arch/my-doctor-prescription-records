@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MY DOCTOR PRESCRIPTIONS RECORD</title>
+<style>
+:root{--teal:#0e6674;--teal2:#0a4c57;--mint:#e6f3f4;--line:#cfdde0;--ink:#1c2b2f;--mut:#667a80;--bg:#eef3f4;--warn:#b8431f;--ok:#1d7a4c;--gold:#f2c14e;--rh:28px}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{font:13px/1.35 "Segoe UI",system-ui,-apple-system,Roboto,"Noto Sans","Noto Sans Bengali",Arial,sans-serif;color:var(--ink);background:var(--bg);display:flex;flex-direction:column}
+[hidden]{display:none!important}
+button,select,input{font:inherit}
+/* header */
+.hdr{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:10px;padding:6px 14px;background:linear-gradient(135deg,var(--teal2),var(--teal));color:#fff;border-bottom:3px solid var(--gold)}
+.credit{font-family:"Palatino Linotype","Book Antiqua",Georgia,serif;line-height:1.15}
+.credit small{display:block;opacity:.8;font-style:italic;font-size:11px}
+.credit b{font-size:15px;font-style:italic;color:#ffe29a;border-bottom:1px solid rgba(255,226,154,.6);padding-bottom:1px}
+.credit i{display:block;font-size:11px;opacity:.9}
+.hdr h1{margin:0;text-align:center;font-family:Georgia,"Times New Roman",serif;font-size:clamp(14px,2.4vw,22px);letter-spacing:1.6px;font-weight:700;display:flex;gap:8px;align-items:center;justify-content:center}
+.hdr h1 .cross{color:var(--gold);font-size:1.1em}
+.lock{justify-self:end;display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.55);color:#fff;border-radius:6px;padding:3px 10px;cursor:pointer;height:26px}
+.lock:hover,.lock.open{background:var(--gold);color:#3b2a00;border-color:var(--gold)}
+/* toolbar */
+.bar{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;padding:6px 14px;background:#fff;border-bottom:1px solid var(--line)}
+.pick{display:flex;align-items:center;gap:6px}
+.pick label{font-weight:700;color:var(--teal2);text-transform:uppercase;font-size:11px;letter-spacing:.6px}
+.pick select{height:30px;min-width:170px;border:2px solid var(--teal);border-radius:6px;padding:0 8px;font-weight:700;color:var(--teal2);background:#f7fdfd}
+.pinfo{color:var(--mut);display:flex;gap:6px;flex-wrap:wrap}
+.chip{background:var(--mint);border:1px solid var(--line);border-radius:10px;padding:0 8px;height:20px;line-height:18px;font-size:12px;color:var(--teal2)}
+.sp{flex:1}
+.btn{height:26px;padding:0 10px;border:1px solid var(--teal);background:var(--teal);color:#fff;border-radius:5px;cursor:pointer;white-space:nowrap;font-size:12px;font-weight:600}
+.btn:hover:not(:disabled){background:var(--teal2)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn.o{background:#fff;color:var(--teal2)}
+.btn.o:hover:not(:disabled){background:var(--mint)}
+.btn.d{border-color:var(--warn);color:var(--warn);background:#fff}
+.btn.d:hover:not(:disabled){background:#fbe9e3}
+.btn.g{background:var(--gold);border-color:var(--gold);color:#3b2a00}
+.admbar{display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding:5px 14px;background:#fff8e1;border-bottom:1px solid #ecd48a}
+.admbar .tag{font-weight:700;color:#7a5a00;font-size:11px;text-transform:uppercase;letter-spacing:.6px}
+/* layout */
+.main{flex:1;min-height:0;display:grid;grid-template-columns:minmax(380px,42%) 1fr;gap:10px;padding:10px 14px}
+.card{background:#fff;border:1px solid var(--line);border-radius:6px;display:flex;flex-direction:column;min-height:0;overflow:hidden}
+.card>h2{margin:0;padding:0 10px;height:26px;line-height:26px;font-size:11px;letter-spacing:.8px;text-transform:uppercase;color:#fff;background:var(--teal);display:flex;justify-content:space-between;align-items:center}
+.scroll{overflow:auto;flex:1;min-height:0}
+table.rec{width:100%;border-collapse:collapse}
+table.rec th{position:sticky;top:0;background:var(--mint);text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--teal2);padding:0 8px;height:24px;border-bottom:1px solid var(--line);z-index:1}
+table.rec td{padding:0 8px;height:var(--rh);border-bottom:1px solid #e7eef0;white-space:nowrap}
+table.rec tr.sel td{background:#f2fbfb}
+table.rec tr:hover td{background:#f6fafa}
+td.dt{font-weight:700}
+td.dr{max-width:150px;overflow:hidden;text-overflow:ellipsis;color:var(--mut);font-size:12px}
+.cell{display:flex;align-items:center;gap:4px}
+.cell .btn{height:22px;padding:0 8px;font-size:12px}
+.cell .btn.on{background:var(--gold);border-color:var(--gold);color:#3b2a00}
+.na{color:var(--mut);font-size:11px;font-style:italic}
+.ib{width:22px;height:22px;padding:0;border:1px solid var(--line);background:#fff;border-radius:4px;cursor:pointer;font-size:12px;line-height:1;color:var(--teal2)}
+.ib:hover{background:var(--mint)}
+.dbtn{border:0;background:none;font-weight:700;color:inherit;cursor:pointer;padding:0 6px;height:22px}
+.dbtn:hover{text-decoration:underline}
+.ib.d{color:var(--warn)}
+.ib.d:hover{background:#fbe9e3}
+.empty{padding:18px;color:var(--mut);text-align:center}
+/* detail */
+.meta{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:0;border-bottom:1px solid var(--line);background:#fafdfd}
+.meta div{padding:4px 10px;border-right:1px solid var(--line);min-width:0}
+.meta div:last-child{border-right:0}
+.meta span{display:block;font-size:10px;text-transform:uppercase;letter-spacing:.6px;color:var(--mut)}
+.meta b{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px}
+.badge{display:inline-block;padding:0 7px;border-radius:9px;font-size:11px;font-weight:700;color:#fff;background:var(--teal)}
+.badge.rep{background:#7a4fb0}
+.meta b .badge{display:inline-block;color:#fff;font-size:11px;text-transform:none;letter-spacing:.3px}
+.body{padding:10px 12px;overflow:auto;flex:1;min-height:0}
+.doc{overflow-x:auto}
+.doc h3{margin:0 0 4px;font-family:Georgia,serif;color:var(--teal2);font-size:15px}
+.doc .sub{color:var(--mut);font-size:12px;margin-bottom:6px}
+.doc .kv{display:grid;grid-template-columns:110px 1fr;gap:1px 8px;margin:6px 0;font-size:12.5px}
+.doc .kv dt{color:var(--mut);margin:0}
+.doc .kv dd{margin:0}
+.doc table{width:100%;border-collapse:collapse;margin:6px 0;font-size:12.5px}
+.doc th{background:var(--mint);text-align:left;padding:2px 6px;font-size:11px;text-transform:uppercase;letter-spacing:.4px;color:var(--teal2);border:1px solid var(--line)}
+.doc td{padding:2px 6px;border:1px solid var(--line);height:24px}
+.doc td.f{font-weight:700;color:var(--warn);text-align:center;width:34px}
+.doc h4{margin:8px 0 2px;font-size:11px;letter-spacing:.6px;text-transform:uppercase;color:var(--teal2)}
+.doc ul{margin:2px 0 4px 18px;padding:0}
+.doc .samp{margin-top:10px;padding-top:4px;border-top:1px dashed var(--line);color:var(--mut);font-size:11px;font-style:italic}
+.fileview{width:100%;height:100%;min-height:380px;border:1px solid var(--line);background:#e8eeef}
+.fileview.img{object-fit:contain;height:auto;max-width:100%}
+/* modal */
+.ov{position:fixed;inset:0;background:rgba(8,35,40,.6);z-index:50;display:grid;place-items:center;padding:10px}
+.mb{background:#fff;border-radius:8px;width:min(420px,100%);max-height:94vh;overflow:auto;border-top:4px solid var(--gold);box-shadow:0 10px 40px rgba(0,0,0,.35)}
+.mb h3{margin:0;padding:8px 14px;font-size:14px;color:var(--teal2);border-bottom:1px solid var(--line)}
+.mb .in{padding:10px 14px;display:grid;gap:8px}
+.mb label{display:grid;gap:2px;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--mut)}
+.mb input,.mb select{height:28px;border:1px solid var(--line);border-radius:5px;padding:0 8px;text-transform:none;letter-spacing:0;color:var(--ink)}
+.mb .ft{display:flex;gap:6px;justify-content:flex-end;padding:8px 14px;border-top:1px solid var(--line)}
+.err{color:var(--warn);font-size:12px;min-height:14px}
+/* print preview */
+.pv{position:fixed;inset:0;background:#6b7d82;z-index:60;display:flex;flex-direction:column}
+.pvbar{display:flex;gap:8px;align-items:center;padding:6px 14px;background:var(--teal2);color:#fff}
+.pvbar b{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pvwrap{flex:1;overflow:auto;padding:14px}
+.sheet{background:#fff;max-width:800px;margin:0 auto;padding:22px 26px;min-height:60vh;box-shadow:0 2px 14px rgba(0,0,0,.35)}
+.sheet .top{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:2px solid var(--teal);padding-bottom:6px;margin-bottom:8px}
+.sheet .top b{font-family:Georgia,serif;color:var(--teal2);letter-spacing:1px;font-size:14px}
+.sheet .pm .wide{grid-column:1/-1}
+.sheet .pm{display:grid;grid-template-columns:repeat(4,1fr);gap:4px 12px;border:1px solid var(--line);padding:6px 8px;margin-bottom:10px;font-size:12.5px}
+.sheet .pm span{color:var(--mut);font-size:10px;text-transform:uppercase;display:block;letter-spacing:.5px}
+.sheet .fileview{height:70vh}
+.toast{position:fixed;left:50%;bottom:18px;transform:translate(-50%,20px);background:#222;color:#fff;padding:7px 14px;border-radius:6px;opacity:0;pointer-events:none;transition:.25s;z-index:90;max-width:92vw;text-align:center}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+@media(max-width:820px){
+ body{height:auto;min-height:100%}
+ .hdr{grid-template-columns:1fr auto;grid-template-areas:"c l" "t t"}
+ .credit{grid-area:c}.lock{grid-area:l}.hdr h1{grid-area:t}
+ .main{grid-template-columns:1fr}
+ .scroll{max-height:42vh}
+ .body{min-height:50vh}
+ .meta{grid-template-columns:1fr 1fr}
+ .meta div:nth-child(2){border-right:0}
+ .meta div:nth-child(-n+2){border-bottom:1px solid var(--line)}
+ .sp{display:none}
+}
+@media print{
+ @page{margin:12mm}
+ body{background:#fff;display:block;height:auto}
+ body.pvopen>*:not(#pv){display:none!important}
+ body.pvopen #pv{position:static;background:#fff;display:block}
+ .pvbar,.toast{display:none!important}
+ .pvwrap{padding:0;overflow:visible}
+ .sheet{box-shadow:none;max-width:none;padding:0;min-height:0}
+}
+</style>
+</head>
+<body>
+
+<header class="hdr">
+  <div class="credit"><small>Created by:</small><b>Nowsher Md. Bodrud Daula</b><i>Programmer, NU</i></div>
+  <h1><span class="cross" aria-hidden="true">&#10010;</span>MY DOCTOR PRESCRIPTIONS RECORD</h1>
+  <button id="lock" class="lock" type="button" title="Admin lock"><span id="lockIc" aria-hidden="true">&#128274;</span><span>Admin</span></button>
+</header>
+
+<div class="bar">
+  <div class="pick"><label for="patient">Patient</label><select id="patient"></select></div>
+  <div id="pinfo" class="pinfo"></div>
+  <div class="sp"></div>
+  <button id="exportBtn" class="btn g" type="button" disabled title="Print preview of the displayed document">&#128424; Export / Print</button>
+</div>
+
+<div id="admbar" class="admbar" hidden>
+  <span class="tag">Admin</span>
+  <button class="btn" id="aAddP" type="button">+ Patient</button>
+  <button class="btn o" id="aEditP" type="button">Edit patient</button>
+  <button class="btn d" id="aDelP" type="button">Remove patient</button>
+  <button class="btn" id="aAddD" type="button">+ Date</button>
+  <span class="sp"></span>
+  <button class="btn o" id="aBackup" type="button" title="Download all records and uploaded files as one backup file">Backup</button>
+  <button class="btn o" id="aRestore" type="button" title="Restore from a backup file">Restore</button>
+  <button class="btn o" id="aReset" type="button" title="Replace all data with the sample records">Restore sample data</button>
+</div>
+
+<div class="main">
+  <section class="card">
+    <h2><span>Records &mdash; dates</span><span id="cnt"></span></h2>
+    <div class="scroll" id="recs"></div>
+  </section>
+  <section class="card">
+    <h2><span>Detail panel</span></h2>
+    <div class="meta" id="meta">
+      <div><span>Patient</span><b id="mP">&ndash;</b></div>
+      <div><span>Date</span><b id="mD">&ndash;</b></div>
+      <div><span>Document type</span><b id="mT">&ndash;</b></div>
+      <div><span>Title</span><b id="mTi">&ndash;</b></div>
+    </div>
+    <div class="body" id="detail"><div class="empty">Select a patient, then a date, then <b>Prescription</b> or <b>Report</b>.</div></div>
+  </section>
+</div>
+
+<div id="pv" class="pv" hidden>
+  <div class="pvbar"><b id="pvTitle">Print preview</b>
+    <button id="pvPrint" class="btn g" type="button">Print / Save as PDF</button>
+    <button id="pvClose" class="btn o" type="button">Close &times;</button></div>
+  <div class="pvwrap"><div class="sheet" id="sheet"></div></div>
+</div>
+<div id="ovRoot"></div>
+<div id="toast" class="toast" role="status"></div>
+<input type="file" id="restoreIn" accept=".json,application/json" hidden>
+<input type="file" id="fileIn" accept=".pdf,.jpg,.jpeg,application/pdf,image/jpeg" hidden>
+
+<script>
+"use strict";
+/* ============ CONFIG ============ */
+const CONFIG = { adminPassword: "admin123", storageKey: "mdpr.data.v1", appName: "My Doctor Prescriptions Record" };
+const TYPES = { rx: { label: "Prescription", short: "Prescription" }, rep: { label: "Report", short: "Report" } };
+
+/* ============ SAMPLE (hypothetical) DATA ============ */
+const SAMPLE = (function () {
+  const R = (date, doctor, complaints, vitals, dx, rx, advice, follow, inv, rep) => ({ date, doctor, complaints, vitals, dx, rx, advice, follow, inv, rep });
+  const P = (name, age, gender, recs) => ({ name, age, gender, notes: "", recs });
+  return [
+    P("Nowsher", 40, "Male", [
+      R("2026-01-15", "Dr. A. Rahman (Medicine)", "Fever for 3 days, dry cough, sore throat", "BP 120/80 mmHg | Pulse 88/min | Temp 100.4 F | Wt 72 kg", "Acute upper respiratory tract infection",
+        [["Paracetamol","500 mg","1+1+1 (if fever)","3 days","After meals"],["Fexofenadine","120 mg","0+0+1","5 days","At bedtime"],["Azithromycin","500 mg","1+0+0","3 days","After meal"]],
+        ["Plenty of warm fluids and rest","Steam inhalation twice daily"],"Review after 5 days if fever persists","CBC, ESR",
+        { title:"Complete Blood Count (CBC) with ESR", lab:"Sample Diagnostic Laboratory", specimen:"Whole blood (EDTA)", tests:[["Haemoglobin","14.2","g/dL","13.0 - 17.0",""],["Total WBC count","11.8","x10^3/uL","4.0 - 11.0","H"],["Neutrophils","74","%","40 - 75",""],["Lymphocytes","20","%","20 - 45",""],["Platelet count","265","x10^3/uL","150 - 450",""],["ESR","22","mm/1st hr","0 - 15","H"]], impression:"Mild leucocytosis and raised ESR, consistent with an infective process.", remarks:"Clinical correlation advised." }),
+      R("2026-02-15", "Dr. A. Rahman (Medicine)", "Burning pain in the upper abdomen after meals for 2 weeks", "BP 118/78 mmHg | Pulse 76/min | Wt 72 kg", "Gastritis",
+        [["Esomeprazole","20 mg","1+0+1","14 days","30 min before meals"],["Sodium alginate suspension","10 ml","1+1+1","7 days","After meals"]],
+        ["Avoid spicy, oily food and tea on an empty stomach","Eat small, regular meals"],"Review after 2 weeks","None",null),
+      R("2026-04-12", "Dr. A. Rahman (Medicine)", "Routine health check; family history of high cholesterol", "BP 122/80 mmHg | Pulse 74/min | Wt 71 kg", "Borderline dyslipidaemia",
+        [["Omega-3 fatty acid","1 g","0+0+1","30 days","After dinner"],["Vitamin D3","2000 IU","0+1+0","30 days","After lunch"]],
+        ["Low-fat diet, more vegetables and fibre","Walk 30 minutes daily"],"Review in 3 months with repeat lipid profile","Lipid profile, fasting glucose, creatinine",
+        { title:"Lipid Profile, Fasting Glucose & Creatinine", lab:"Sample Diagnostic Laboratory", specimen:"Fasting serum", tests:[["Fasting glucose","5.4","mmol/L","3.9 - 5.5",""],["Total cholesterol","5.6","mmol/L","< 5.2","H"],["LDL cholesterol","3.6","mmol/L","< 3.4","H"],["HDL cholesterol","1.1","mmol/L","> 1.0",""],["Triglyceride","1.9","mmol/L","< 1.7","H"],["Serum creatinine","88","umol/L","62 - 106",""]], impression:"Mildly raised total cholesterol, LDL and triglyceride. Glucose and creatinine normal.", remarks:"Dietary modification and repeat testing in 3 months." }),
+    ]),
+    P("Nighat", 34, "Female", [
+      R("2026-02-08", "Dr. S. Chowdhury (Endocrinology)", "Fatigue, weight gain and cold intolerance for 2 months", "BP 110/70 mmHg | Pulse 66/min | Wt 66 kg", "Suspected hypothyroidism",
+        [["Levothyroxine","50 mcg","1+0+0","30 days","Empty stomach, 30 min before breakfast"]],
+        ["Take the tablet at the same time every morning","Avoid taking iron or calcium within 4 hours of it"],"Review in 6 weeks with thyroid profile","Thyroid profile",
+        { title:"Thyroid Function Profile", lab:"Sample Diagnostic Laboratory", specimen:"Serum", tests:[["TSH","6.8","mIU/L","0.4 - 4.0","H"],["Free T4","11.2","pmol/L","12.0 - 22.0","L"],["Free T3","4.1","pmol/L","3.1 - 6.8",""]], impression:"Raised TSH with low free T4, suggestive of primary hypothyroidism.", remarks:"Clinical correlation advised." }),
+      R("2026-03-20", "Dr. R. Sultana (Neurology)", "One-sided throbbing headache with nausea, 3 episodes this month", "BP 112/72 mmHg | Pulse 72/min", "Migraine without aura",
+        [["Naproxen","500 mg","1 tab at onset (max 2/day)","10 tablets","After food"],["Domperidone","10 mg","1 tab if nauseated","10 tablets","Before food"]],
+        ["Keep a headache diary","Regular sleep; avoid skipped meals and known triggers"],"Review after 1 month","None",null),
+      R("2026-05-05", "Dr. S. Chowdhury (Endocrinology)", "Easy fatigue, hair fall and dizziness", "BP 104/68 mmHg | Pulse 84/min | Wt 65 kg", "Iron deficiency anaemia",
+        [["Ferrous fumarate + Folic acid","200 mg + 0.5 mg","0+0+1","60 days","After dinner"],["Vitamin C","250 mg","0+0+1","30 days","With iron"]],
+        ["Iron-rich diet (lentils, leafy vegetables, meat)","Avoid tea or coffee within 1 hour of meals"],"Review in 2 months with CBC","CBC, serum ferritin",
+        { title:"CBC & Serum Ferritin", lab:"Sample Diagnostic Laboratory", specimen:"Whole blood (EDTA), serum", tests:[["Haemoglobin","10.8","g/dL","12.0 - 15.5","L"],["MCV","74","fL","80 - 100","L"],["Total WBC count","7.2","x10^3/uL","4.0 - 11.0",""],["Platelet count","310","x10^3/uL","150 - 450",""],["Serum ferritin","8","ng/mL","13 - 150","L"]], impression:"Microcytic anaemia with low ferritin, consistent with iron deficiency.", remarks:"Repeat CBC after 2 months of treatment." }),
+    ]),
+    P("Nafis", 9, "Male", [
+      R("2026-01-10", "Dr. F. Ahmed (Paediatrics)", "Runny nose and cough for 2 days, low-grade fever", "Temp 99.6 F | Wt 28 kg", "Common cold",
+        [["Paracetamol syrup","120 mg/5 ml","5 ml, up to 3 times if fever","3 days","Measure with the cup"],["Cetirizine syrup","5 mg/5 ml","0+0+5 ml","5 days","At bedtime"],["Normal saline nasal drops","2 drops each nostril","3 times daily","5 days",""]],
+        ["Warm fluids; avoid cold drinks","Return if fever lasts more than 3 days"],"As needed","None",null),
+      R("2026-03-14", "Dr. F. Ahmed (Paediatrics)", "Burning during urination and frequent urination for 2 days", "Temp 99.0 F | Wt 28.5 kg", "Suspected urinary tract infection",
+        [["Cefixime syrup","100 mg/5 ml","5 ml, 1+0+1","7 days","After food"]],
+        ["Drink plenty of water","Maintain genital hygiene"],"Review with report in 3 days","Urine R/E, culture and sensitivity",
+        { title:"Urine Routine Examination", lab:"Sample Diagnostic Laboratory", specimen:"Mid-stream urine", tests:[["Colour","Pale yellow","","Pale yellow",""],["Albumin","Nil","","Nil",""],["Sugar","Nil","","Nil",""],["Pus cells","12 - 15","/HPF","0 - 5","H"],["RBC","0 - 2","/HPF","0 - 2",""],["Epithelial cells","2 - 4","/HPF","Few",""]], impression:"Pyuria present, suggestive of urinary tract infection.", remarks:"Culture and sensitivity advised." }),
+      R("2026-06-22", "Dr. F. Ahmed (Paediatrics)", "Itchy red rash on both forearms after outdoor play", "Temp 98.4 F | Wt 29 kg", "Contact dermatitis",
+        [["Hydrocortisone 1% cream","Thin layer","Twice daily","5 days","Affected area only"],["Cetirizine syrup","5 mg/5 ml","0+0+5 ml","5 days","At bedtime"]],
+        ["Avoid scratching; keep nails short","Wash the area with mild soap"],"Review if no improvement in 5 days","None",null),
+    ]),
+    P("Noushin", 54, "Female", [
+      R("2026-02-03", "Dr. M. Karim (Medicine)", "Excessive thirst, frequent urination and tiredness for 1 month", "BP 134/84 mmHg | Pulse 80/min | Wt 68 kg", "Type 2 diabetes mellitus (newly detected)",
+        [["Metformin","500 mg","1+0+1","30 days","After meals"]],
+        ["Diabetic diet; avoid sugar and sweets","Walk 30 minutes daily"],"Review in 4 weeks","FBS, 2-hour post-breakfast glucose, HbA1c",
+        { title:"Blood Glucose & HbA1c", lab:"Sample Diagnostic Laboratory", specimen:"Plasma, whole blood", tests:[["Fasting blood glucose","7.8","mmol/L","3.9 - 5.5","H"],["2-hour post-breakfast glucose","11.4","mmol/L","< 7.8","H"],["HbA1c","7.2","%","< 5.7","H"]], impression:"Findings consistent with diabetes mellitus.", remarks:"Clinical correlation advised." }),
+      R("2026-04-18", "Dr. M. Karim (Medicine)", "Diabetes follow-up; occasional dizziness", "BP 130/82 mmHg | Pulse 78/min | Wt 67 kg", "Type 2 diabetes mellitus, on treatment",
+        [["Metformin","500 mg","1+0+1","30 days","After meals"],["Vitamin B-complex","1 tab","1+0+0","30 days","After breakfast"]],
+        ["Check blood glucose at home twice a week","Do not skip meals"],"Review in 3 months with HbA1c","None",null),
+      R("2026-07-25", "Dr. M. Karim (Medicine)", "Cough for 3 weeks with mild chest discomfort", "BP 128/80 mmHg | Pulse 82/min | SpO2 98%", "Chronic cough, under evaluation",
+        [["Montelukast + Levocetirizine","10 mg + 5 mg","0+0+1","14 days","At bedtime"]],
+        ["Avoid dust and smoke","Warm water gargles"],"Review with chest X-ray report","Chest X-ray (P/A view)",
+        { title:"Chest X-ray (P/A view)", lab:"Sample Imaging Centre", specimen:"", findings:["Both lung fields are clear","No consolidation, mass or pleural effusion","Cardiac silhouette is of normal size","Costophrenic angles are sharp","Bones and soft tissues are unremarkable"], impression:"Normal chest radiograph.", remarks:"" }),
+    ]),
+    P("Nourin", 27, "Female", [
+      R("2026-01-12", "Dr. T. Islam (ENT)", "Morning sneezing, nasal itching and watery eyes", "BP 108/70 mmHg | Pulse 70/min", "Allergic rhinitis",
+        [["Levocetirizine","5 mg","0+0+1","14 days","At bedtime"],["Mometasone nasal spray","2 puffs each nostril","1+0+0","14 days","Morning"]],
+        ["Avoid dust and strong smells","Wash bedding weekly in hot water"],"Review after 2 weeks","None",null),
+      R("2026-03-09", "Dr. T. Islam (ENT)", "Recurrent sneezing with skin itching", "BP 110/70 mmHg | Pulse 72/min", "Allergic rhinitis with raised eosinophils",
+        [["Montelukast","10 mg","0+0+1","30 days","At bedtime"],["Levocetirizine","5 mg","1 tab if needed","10 tablets","When itching is severe"]],
+        ["Identify and avoid triggers"],"Review after 1 month","CBC, total IgE",
+        { title:"CBC & Total IgE", lab:"Sample Diagnostic Laboratory", specimen:"Whole blood (EDTA), serum", tests:[["Haemoglobin","12.6","g/dL","12.0 - 15.5",""],["Total WBC count","8.4","x10^3/uL","4.0 - 11.0",""],["Eosinophils","9","%","1 - 6","H"],["Platelet count","288","x10^3/uL","150 - 450",""],["Total IgE","310","IU/mL","< 100","H"]], impression:"Eosinophilia and raised total IgE, supportive of an allergic condition.", remarks:"Clinical correlation advised." }),
+      R("2026-05-30", "Dr. N. Hasan (Gastroenterology)", "Lower abdominal discomfort and bloating for 1 week", "BP 106/68 mmHg | Pulse 74/min", "Functional dyspepsia, under evaluation",
+        [["Pantoprazole","40 mg","1+0+0","14 days","30 min before breakfast"],["Simethicone","40 mg","1+1+1","7 days","After meals"]],
+        ["Eat slowly; avoid carbonated drinks","Note foods that worsen the bloating"],"Review with ultrasound report","Ultrasonography of whole abdomen",
+        { title:"Ultrasonography of Whole Abdomen", lab:"Sample Imaging Centre", specimen:"", findings:["Liver is normal in size and echotexture","Gall bladder is normal; no calculus seen","Pancreas and spleen are normal","Both kidneys are normal in size and position; no hydronephrosis","Urinary bladder is normal"], impression:"No abnormality detected on this scan.", remarks:"" }),
+    ]),
+  ];
+})();
+
+/* ============ UTIL ============ */
+const $ = (id) => document.getElementById(id);
+const uid = () => Math.random().toString(36).slice(2, 9) + Date.now().toString(36).slice(-4);
+const MON = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+const fmtDate = (iso, short) => { const [y, m, d] = iso.split("-").map(Number); return d + " " + (short ? MON[m-1].slice(0,3) : MON[m-1]) + " " + y; };
+function h(tag, attrs, ...kids) {
+  const e = document.createElement(tag);
+  for (const k in (attrs || {})) {
+    if (k === "class") e.className = attrs[k];
+    else if (k.startsWith("on")) e.addEventListener(k.slice(2), attrs[k]);
+    else if (attrs[k] === true) e.setAttribute(k, "");
+    else if (attrs[k] !== false && attrs[k] != null) e.setAttribute(k, attrs[k]);
+  }
+  kids.flat().forEach((c) => { if (c == null || c === false) return; e.append(c.nodeType ? c : document.createTextNode(String(c))); });
+  return e;
+}
+let toastT;
+function toast(msg) { const t = $("toast"); t.textContent = msg; t.classList.add("show"); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove("show"), 3200); }
+
+/* ============ FILE STORE (IndexedDB; in-memory fallback) ============ */
+const Files = {
+  db: null, mem: new Map(), persistent: false,
+  open() {
+    return new Promise((res) => {
+      if (!window.indexedDB) return res();
+      let rq; try { rq = indexedDB.open("mdpr-files", 1); } catch (e) { return res(); }
+      rq.onupgradeneeded = () => rq.result.createObjectStore("blobs");
+      rq.onsuccess = () => { Files.db = rq.result; Files.persistent = true; res(); };
+      rq.onerror = () => res();
+    });
+  },
+  _tx(mode, fn) { return new Promise((res, rej) => { const tx = Files.db.transaction("blobs", mode); const r = fn(tx.objectStore("blobs")); tx.oncomplete = () => res(r && r.result); tx.onerror = () => rej(tx.error); }); },
+  put(key, blob) { if (!Files.db) { Files.mem.set(key, blob); return Promise.resolve(); } return Files._tx("readwrite", (s) => s.put(blob, key)); },
+  get(key) { if (!Files.db) return Promise.resolve(Files.mem.get(key) || null); return Files._tx("readonly", (s) => s.get(key)).then((v) => v || null); },
+  del(key) { if (!Files.db) { Files.mem.delete(key); return Promise.resolve(); } return Files._tx("readwrite", (s) => s.delete(key)).catch(() => {}); },
+  clear() { Files.mem.clear(); if (!Files.db) return Promise.resolve(); return Files._tx("readwrite", (s) => s.clear()).catch(() => {}); }
+};
+
+/* ============ DATA STORE (localStorage) ============ */
+function buildSample() {
+  return SAMPLE.map((p) => ({
+    id: uid(), name: p.name, age: p.age, gender: p.gender, blood: "", phone: "", notes: p.notes,
+    dates: p.recs.map((r) => ({
+      id: uid(), date: r.date, doctor: r.doctor, note: r.dx,
+      rx: { source: "sample", title: "Prescription \u2013 " + r.dx, sample: { doctor: r.doctor, facility: "Sample Medical Centre", complaints: r.complaints, vitals: r.vitals, dx: r.dx, rx: r.rx, advice: r.advice, follow: r.follow, inv: r.inv } },
+      rep: r.rep ? { source: "sample", title: r.rep.title, sample: r.rep } : null
+    }))
+  }));
+}
+const Store = {
+  patients: [],
+  load() {
+    try { const raw = localStorage.getItem(CONFIG.storageKey); if (raw) { Store.patients = JSON.parse(raw); return; } } catch (e) {}
+    Store.patients = buildSample(); Store.save();
+  },
+  save() { try { localStorage.setItem(CONFIG.storageKey, JSON.stringify(Store.patients)); } catch (e) { toast("Could not save changes in this browser."); } },
+  patient(id) { return Store.patients.find((p) => p.id === id); }
+};
+const fileKey = (pid, did, type) => pid + "|" + did + "|" + type;
+
+/* ============ STATE ============ */
+const S = { pid: null, did: null, type: null, admin: false, url: null };
+
+/* ============ DOCUMENT RENDERING ============ */
+function kvList(pairs) {
+  const dl = h("dl", { class: "kv" });
+  pairs.forEach(([k, v]) => { if (v) { dl.append(h("dt", null, k), h("dd", null, v)); } });
+  return dl;
+}
+function renderRx(d) {
+  const x = d.sample, el = h("div", { class: "doc" });
+  el.append(h("h3", null, x.doctor), h("div", { class: "sub" }, x.facility + " \u2022 Prescription"));
+  el.append(kvList([["Complaints", x.complaints], ["Vitals", x.vitals], ["Diagnosis", x.dx], ["Investigations", x.inv]]));
+  el.append(h("h4", null, "\u211E Medicines"));
+  const t = h("table", null, h("thead", null, h("tr", null, ["#", "Medicine", "Dose", "Frequency", "Duration", "Instruction"].map((c) => h("th", null, c)))),
+    h("tbody", null, x.rx.map((r, i) => h("tr", null, h("td", null, i + 1), r.map((c) => h("td", null, c))))));
+  el.append(t, h("h4", null, "Advice"), h("ul", null, x.advice.map((a) => h("li", null, a))));
+  el.append(kvList([["Follow-up", x.follow]]));
+  el.append(h("div", { class: "samp" }, "Hypothetical sample record for demonstration only."));
+  return el;
+}
+function renderRep(d) {
+  const x = d.sample, el = h("div", { class: "doc" });
+  el.append(h("h3", null, x.title), h("div", { class: "sub" }, x.lab + (x.specimen ? " \u2022 Specimen: " + x.specimen : "")));
+  if (x.tests) {
+    el.append(h("table", null, h("thead", null, h("tr", null, ["Test", "Result", "Unit", "Reference range", "Flag"].map((c) => h("th", null, c)))),
+      h("tbody", null, x.tests.map((r) => h("tr", null, r.slice(0, 4).map((c) => h("td", null, c)), h("td", { class: "f" }, r[4]))))));
+  }
+  if (x.findings) { el.append(h("h4", null, "Findings"), h("ul", null, x.findings.map((f) => h("li", null, f)))); }
+  el.append(kvList([["Impression", x.impression], ["Remarks", x.remarks]]));
+  el.append(h("div", { class: "samp" }, "Hypothetical sample report for demonstration only. H = high, L = low."));
+  return el;
+}
+/* Builds the document body for the panel or print preview. Returns a Promise<Element>. */
+function buildDocBody(doc, pid, did, type, forPrint) {
+  if (doc.source === "sample") return Promise.resolve(type === "rx" ? renderRx(doc) : renderRep(doc));
+  return Files.get(fileKey(pid, did, type)).then((blob) => {
+    if (!blob) return h("div", { class: "empty" }, "The uploaded file could not be found in this browser's storage. Please upload it again.");
+    const url = URL.createObjectURL(blob); trackUrl(url);
+    if ((doc.file && doc.file.type) === "image") return h("img", { class: "fileview img", src: url, alt: doc.title });
+    const fr = h("iframe", { class: "fileview", src: url, title: doc.title });
+    return h("div", null, fr, h("p", { class: "na" }, "If the PDF does not display here, "), h("a", { href: url, target: "_blank", rel: "noopener" }, "open it in a new tab"));
+  });
+}
+const urls = [];
+function trackUrl(u) { urls.push(u); }
+function freeUrls() { while (urls.length) URL.revokeObjectURL(urls.pop()); }
+
+/* ============ RENDER ============ */
+function curPatient() { return Store.patient(S.pid); }
+function curDate() { const p = curPatient(); return p && p.dates.find((d) => d.id === S.did); }
+function sortedDates(p) { return p.dates.slice().sort((a, b) => b.date.localeCompare(a.date)); }
+
+function renderPatientSelect() {
+  const sel = $("patient"); sel.textContent = "";
+  if (!Store.patients.length) sel.append(h("option", { value: "" }, "No patients"));
+  Store.patients.forEach((p) => sel.append(h("option", { value: p.id }, p.name)));
+  sel.value = S.pid || "";
+}
+function renderInfo() {
+  const box = $("pinfo"); box.textContent = ""; const p = curPatient(); if (!p) return;
+  if (p.age) box.append(h("span", { class: "chip" }, "Age " + p.age));
+  if (p.gender) box.append(h("span", { class: "chip" }, p.gender));
+  if (p.blood) box.append(h("span", { class: "chip" }, "Blood " + p.blood));
+  if (p.phone) box.append(h("span", { class: "chip" }, "\u260E " + p.phone));
+  if (p.notes) box.append(h("span", { class: "chip" }, p.notes));
+  box.append(h("span", { class: "chip" }, p.dates.length + " record date" + (p.dates.length === 1 ? "" : "s")));
+}
+function docCell(p, d, type) {
+  const doc = type === "rx" ? d.rx : d.rep, on = S.did === d.id && S.type === type;
+  const cell = h("div", { class: "cell" });
+  if (doc) cell.append(h("button", { class: "btn" + (on ? " on" : ""), type: "button", onclick: () => selectDoc(d.id, type) }, TYPES[type].label));
+  else cell.append(h("button", { class: "btn", type: "button", disabled: true, title: "No " + TYPES[type].label.toLowerCase() + " available for this date" }, TYPES[type].label), S.admin ? null : h("span", { class: "na" }, "Not available"));
+  if (S.admin) {
+    cell.append(h("button", { class: "ib", type: "button", title: (doc ? "Replace " : "Upload ") + TYPES[type].label.toLowerCase() + " (PDF / JPG)", onclick: () => pickUpload(d.id, type) }, "\u2B06"));
+    if (doc) cell.append(h("button", { class: "ib d", type: "button", title: "Delete " + TYPES[type].label.toLowerCase(), onclick: () => deleteDoc(d.id, type) }, "\u2715"));
+  }
+  return cell;
+}
+function renderRecords() {
+  const box = $("recs"); box.textContent = ""; const p = curPatient();
+  $("cnt").textContent = p ? p.dates.length + " dates" : "";
+  if (!p) { box.append(h("div", { class: "empty" }, "No patient selected.")); return; }
+  if (!p.dates.length) { box.append(h("div", { class: "empty" }, "No record dates for this patient." + (S.admin ? " Use + Date to add one." : ""))); return; }
+  const head = ["Date", "Prescription", "Report", "Doctor"]; if (S.admin) head.push("Edit");
+  const tb = h("tbody");
+  sortedDates(p).forEach((d) => {
+    const tr = h("tr", { class: d.id === S.did ? "sel" : "" },
+      h("td", { class: "dt" }, h("button", { class: "dbtn", type: "button", onclick: () => selectDate(d.id) }, fmtDate(d.date, true))),
+      h("td", null, docCell(p, d, "rx")), h("td", null, docCell(p, d, "rep")),
+      h("td", { class: "dr", title: [d.doctor, d.note].filter(Boolean).join(" \u2014 ") }, d.doctor || "\u2013"));
+    if (S.admin) tr.append(h("td", null, h("div", { class: "cell" },
+      h("button", { class: "ib", type: "button", title: "Change date", onclick: () => dateForm(d) }, "\u270E"),
+      h("button", { class: "ib d", type: "button", title: "Delete date and its documents", onclick: () => deleteDate(d) }, "\u2715"))));
+    tb.append(tr);
+  });
+  box.append(h("table", { class: "rec" }, h("thead", null, h("tr", null, head.map((c) => h("th", null, c)))), tb));
+}
+function renderDetail() {
+  freeUrls();
+  const p = curPatient(), d = curDate(), doc = d && (S.type === "rx" ? d.rx : S.type === "rep" ? d.rep : null);
+  const body = $("detail"); body.textContent = "";
+  $("mP").textContent = p ? p.name : "\u2013";
+  $("mD").textContent = d ? fmtDate(d.date) : "\u2013";
+  $("exportBtn").disabled = !doc;
+  const mt = $("mT"), mti = $("mTi"); mt.textContent = ""; mti.textContent = "\u2013";
+  if (!p) { mt.textContent = "\u2013"; body.append(h("div", { class: "empty" }, "Select a patient to begin.")); return; }
+  if (!d) { mt.textContent = "\u2013"; body.append(h("div", { class: "empty" }, "Select a date, then Prescription or Report.")); return; }
+  if (!S.type) { mt.textContent = "\u2013"; body.append(h("div", { class: "empty" }, "Choose Prescription or Report for " + fmtDate(d.date) + ".")); return; }
+  mt.append(h("span", { class: "badge" + (S.type === "rep" ? " rep" : "") }, TYPES[S.type].label));
+  if (!doc) { mti.textContent = "Not available"; body.append(h("div", { class: "empty" }, "No " + TYPES[S.type].label.toLowerCase() + " is available for " + fmtDate(d.date) + ".")); return; }
+  mti.textContent = doc.title; mti.title = doc.title;
+  const token = ++renderDetail.t;
+  buildDocBody(doc, p.id, d.id, S.type).then((el) => { if (token === renderDetail.t) body.append(el); });
+}
+renderDetail.t = 0;
+function renderAll() { renderPatientSelect(); renderInfo(); renderRecords(); renderDetail(); renderAdminBar(); }
+function renderAdminBar() {
+  $("admbar").hidden = !S.admin;
+  $("lock").classList.toggle("open", S.admin);
+  $("lockIc").innerHTML = S.admin ? "&#128275;" : "&#128274;";
+  const none = !curPatient();
+  $("aEditP").disabled = none; $("aDelP").disabled = none; $("aAddD").disabled = none;
+}
+
+/* ============ SELECTION LOGIC ============ */
+function selectPatient(pid) {
+  S.pid = pid || null; S.did = null; S.type = null;
+  const p = curPatient();
+  if (p && p.dates.length) { // show newest date, newest available document
+    const d = sortedDates(p)[0]; S.did = d.id; S.type = d.rx ? "rx" : d.rep ? "rep" : null;
+  }
+  renderAll();
+}
+function selectDate(did) {
+  const d = curPatient().dates.find((x) => x.id === did); S.did = did;
+  if (!(S.type && (S.type === "rx" ? d.rx : d.rep))) S.type = d.rx ? "rx" : d.rep ? "rep" : null;
+  renderRecords(); renderDetail();
+}
+function selectDoc(did, type) { S.did = did; S.type = type; renderRecords(); renderDetail(); }
+
+/* ============ MODALS ============ */
+function modal(title, fields, okLabel, onOk, extra) {
+  const err = h("div", { class: "err" }), inputs = {};
+  const inner = h("div", { class: "in" });
+  fields.forEach((f) => {
+    const inp = f.type === "select" ? h("select", null, f.options.map((o) => h("option", { value: o }, o || "\u2013")))
+      : h("input", { type: f.type || "text", value: f.value == null ? "" : f.value, placeholder: f.ph || "", maxlength: f.max || 80, autocomplete: "off" });
+    if (f.type === "select") inp.value = f.value || "";
+    inputs[f.key] = inp; inner.append(h("label", null, f.label, inp));
+  });
+  if (extra) inner.append(extra);
+  inner.append(err);
+  const close = () => { root.remove(); };
+  const ok = h("button", { class: "btn", type: "button", onclick: () => { const vals = {}; for (const k in inputs) vals[k] = inputs[k].value.trim(); const m = onOk(vals); if (m) err.textContent = m; else close(); } }, okLabel);
+  const root = h("div", { class: "ov", onmousedown: (e) => { if (e.target === root) close(); } },
+    h("div", { class: "mb", role: "dialog", "aria-modal": "true" }, h("h3", null, title), inner, h("div", { class: "ft" }, h("button", { class: "btn o", type: "button", onclick: close }, "Cancel"), ok)));
+  root.addEventListener("keydown", (e) => { if (e.key === "Enter") ok.click(); if (e.key === "Escape") close(); });
+  $("ovRoot").append(root);
+  const first = root.querySelector("input,select"); if (first) first.focus();
+}
+
+/* ============ ADMIN ACTIONS ============ */
+function unlockDialog() {
+  modal("Admin lock", [{ key: "pw", label: "Password", type: "password" }], "Unlock", (v) => {
+    if (v.pw !== CONFIG.adminPassword) return "Incorrect password.";
+    S.admin = true; renderAll(); toast("Admin mode unlocked."); return "";
+  });
+}
+function lockAdmin() { S.admin = false; renderAll(); toast("Admin mode locked."); }
+const GENDERS = ["", "Male", "Female", "Other"];
+const BLOOD = ["", "A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
+function patientForm(p) {
+  modal(p ? "Edit patient" : "Add patient", [
+    { key: "name", label: "Name", value: p && p.name, max: 40 },
+    { key: "age", label: "Age (optional)", type: "number", value: p && p.age, max: 3 },
+    { key: "gender", label: "Gender (optional)", type: "select", options: GENDERS, value: p && p.gender },
+    { key: "blood", label: "Blood group (optional)", type: "select", options: BLOOD, value: p && p.blood },
+    { key: "phone", label: "Phone (optional)", type: "tel", value: p && p.phone, max: 20 },
+    { key: "notes", label: "Note (optional)", value: p && p.notes, max: 60 }
+  ], p ? "Save" : "Add", (v) => {
+    if (!v.name) return "Name is required.";
+    if (Store.patients.some((x) => x !== p && x.name.toLowerCase() === v.name.toLowerCase())) return "A patient with this name already exists.";
+    if (v.age && (v.age < 0 || v.age > 130)) return "Enter a valid age.";
+    if (p) { p.name = v.name; p.age = v.age ? Number(v.age) : ""; p.gender = v.gender; p.blood = v.blood; p.phone = v.phone; p.notes = v.notes; Store.save(); renderAll(); }
+    else { const n = { id: uid(), name: v.name, age: v.age ? Number(v.age) : "", gender: v.gender, blood: v.blood, phone: v.phone, notes: v.notes, dates: [] }; Store.patients.push(n); Store.save(); selectPatient(n.id); }
+    return "";
+  });
+}
+function removePatient() {
+  const p = curPatient(); if (!p) return;
+  if (!confirm("Remove patient \"" + p.name + "\" and all their dates and uploaded documents?")) return;
+  p.dates.forEach((d) => { Files.del(fileKey(p.id, d.id, "rx")); Files.del(fileKey(p.id, d.id, "rep")); });
+  Store.patients = Store.patients.filter((x) => x !== p); Store.save();
+  selectPatient(Store.patients[0] && Store.patients[0].id);
+}
+function dateForm(d) {
+  const p = curPatient(); if (!p) return;
+  modal(d ? "Edit record date" : "Add date for " + p.name, [
+    { key: "date", label: "Record date", type: "date", value: d ? d.date : "" },
+    { key: "doctor", label: "Doctor / specialty (optional)", value: d && d.doctor, max: 60 },
+    { key: "note", label: "Visit reason / diagnosis (optional)", value: d && d.note, max: 80 }
+  ], d ? "Save" : "Add", (v) => {
+    if (!v.date) return "Choose a date.";
+    if (p.dates.some((x) => x !== d && x.date === v.date)) return "This patient already has a record on that date.";
+    if (d) { d.date = v.date; d.doctor = v.doctor; d.note = v.note; Store.save(); renderRecords(); renderDetail(); }
+    else { const n = { id: uid(), date: v.date, doctor: v.doctor, note: v.note, rx: null, rep: null }; p.dates.push(n); Store.save(); S.did = n.id; S.type = null; renderAll(); toast("Date added. Use the upload buttons to attach a prescription or report."); }
+    return "";
+  });
+}
+function deleteDate(d) {
+  const p = curPatient();
+  if (!confirm("Delete the record dated " + fmtDate(d.date) + " and its documents?")) return;
+  Files.del(fileKey(p.id, d.id, "rx")); Files.del(fileKey(p.id, d.id, "rep"));
+  p.dates = p.dates.filter((x) => x !== d); Store.save();
+  if (S.did === d.id) { S.did = null; S.type = null; if (p.dates.length) { const n = sortedDates(p)[0]; S.did = n.id; S.type = n.rx ? "rx" : n.rep ? "rep" : null; } }
+  renderAll();
+}
+let uploadTarget = null;
+function pickUpload(did, type) { uploadTarget = { did, type }; $("fileIn").value = ""; $("fileIn").click(); }
+$("fileIn").addEventListener("change", function () {
+  const f = this.files && this.files[0], t = uploadTarget; if (!f || !t) return;
+  const p = curPatient(), d = p && p.dates.find((x) => x.id === t.did); if (!d) return;
+  const name = f.name, isPdf = /\.pdf$/i.test(name) || f.type === "application/pdf", isImg = /\.(jpe?g)$/i.test(name) || f.type === "image/jpeg";
+  if (!isPdf && !isImg) { toast("Only PDF or JPG/JPEG files are accepted."); return; }
+  const existing = t.type === "rx" ? d.rx : d.rep;
+  if (existing && !confirm("Replace the existing " + TYPES[t.type].label.toLowerCase() + " for " + fmtDate(d.date) + "?")) return;
+  const blob = new Blob([f], { type: isPdf ? "application/pdf" : "image/jpeg" });
+  Files.put(fileKey(p.id, d.id, t.type), blob).then(() => {
+    const doc = { source: "upload", title: name.replace(/\.[^.]+$/, ""), file: { name, type: isPdf ? "pdf" : "image", size: f.size } };
+    if (t.type === "rx") d.rx = doc; else d.rep = doc;
+    Store.save(); S.did = d.id; S.type = t.type; renderAll();
+    toast(TYPES[t.type].label + " saved for " + p.name + ", " + fmtDate(d.date, true) + ".");
+  }).catch(() => toast("Could not store the file in this browser."));
+});
+function deleteDoc(did, type) {
+  const p = curPatient(), d = p.dates.find((x) => x.id === did);
+  if (!confirm("Delete the " + TYPES[type].label.toLowerCase() + " for " + fmtDate(d.date) + "?")) return;
+  Files.del(fileKey(p.id, d.id, type)); if (type === "rx") d.rx = null; else d.rep = null;
+  Store.save(); if (S.did === did && S.type === type) S.type = (type === "rx" ? d.rep : d.rx) ? (type === "rx" ? "rep" : "rx") : null;
+  renderAll();
+}
+function resetSamples() {
+  if (!confirm("Replace ALL current data (including uploaded documents) with the original sample records?")) return;
+  Files.clear().then(() => { Store.patients = buildSample(); Store.save(); selectPatient(Store.patients[0].id); toast("Sample data restored."); });
+}
+
+/* ============ BACKUP / RESTORE ============ */
+const blobToDataUrl = (b) => new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(r.result); r.onerror = rej; r.readAsDataURL(b); });
+async function backup() {
+  try {
+    const files = {};
+    for (const p of Store.patients) for (const d of p.dates) for (const t of ["rx", "rep"]) {
+      const doc = d[t]; if (doc && doc.source === "upload") { const k = fileKey(p.id, d.id, t), b = await Files.get(k); if (b) files[k] = await blobToDataUrl(b); }
+    }
+    const out = JSON.stringify({ app: CONFIG.appName, version: 1, saved: new Date().toISOString(), patients: Store.patients, files });
+    const a = h("a", { href: URL.createObjectURL(new Blob([out], { type: "application/json" })), download: "prescriptions-record-backup-" + new Date().toISOString().slice(0, 10) + ".json" });
+    document.body.append(a); a.click(); a.remove(); toast("Backup downloaded.");
+  } catch (e) { toast("Backup failed."); }
+}
+function restore(file) {
+  const r = new FileReader();
+  r.onload = async () => {
+    try {
+      const data = JSON.parse(r.result);
+      if (!data || data.app !== CONFIG.appName || !Array.isArray(data.patients)) throw new Error("bad");
+      if (!confirm("Replace ALL current data with this backup (" + data.patients.length + " patients)?")) return;
+      await Files.clear();
+      for (const k in (data.files || {})) await Files.put(k, await (await fetch(data.files[k])).blob());
+      Store.patients = data.patients; Store.save(); selectPatient(Store.patients[0] && Store.patients[0].id); toast("Backup restored.");
+    } catch (e) { toast("This is not a valid backup file."); }
+  };
+  r.readAsText(file);
+}
+
+/* ============ PRINT PREVIEW ============ */
+function openPreview() {
+  const p = curPatient(), d = curDate(), doc = d && (S.type === "rx" ? d.rx : d.rep); if (!doc) return;
+  const sheet = $("sheet"); sheet.textContent = "";
+  const label = TYPES[S.type].label;
+  sheet.append(h("div", { class: "top" }, h("b", null, "\u271A " + CONFIG.appName.toUpperCase()), h("span", { class: "na" }, label)),
+    h("div", { class: "pm" }, h("div", null, h("span", null, "Patient"), p.name), h("div", null, h("span", null, "Age / Sex"), [p.age, p.gender].filter(Boolean).join(" / ") || "\u2013"), h("div", null, h("span", null, "Date"), fmtDate(d.date)), h("div", null, h("span", null, "Doctor"), d.doctor || "\u2013"), h("div", { class: "wide" }, h("span", null, "Document"), (doc.title.indexOf(label) === 0 ? doc.title : label + " \u2013 " + doc.title))));
+  buildDocBody(doc, p.id, d.id, S.type, true).then((el) => sheet.append(el));
+  $("pvTitle").textContent = "Print preview \u2013 " + p.name + " \u2013 " + fmtDate(d.date) + " \u2013 " + label;
+  $("pv").hidden = false; document.body.classList.add("pvopen"); document.body.dataset.t = document.title;
+  $("pv").dataset.pdf = doc.source === "upload" && doc.file.type === "pdf" ? "1" : "";
+  $("pv").dataset.title = p.name + " - " + fmtDate(d.date, true) + " - " + label;
+}
+function closePreview() { $("pv").hidden = true; document.body.classList.remove("pvopen"); document.title = "MY DOCTOR PRESCRIPTIONS RECORD"; $("sheet").textContent = ""; }
+function doPrint() {
+  const pv = $("pv"); document.title = pv.dataset.title; // suggested file name when saving as PDF
+  if (pv.dataset.pdf) {
+    const fr = $("sheet").querySelector("iframe");
+    try { fr.contentWindow.focus(); fr.contentWindow.print(); }
+    catch (e) { const a = $("sheet").querySelector("a"); if (a) window.open(a.href, "_blank"); toast("The PDF opened in a new tab. Press Ctrl+P there to print or save it."); }
+    return;
+  }
+  window.print();
+}
+window.addEventListener("afterprint", () => { if (!$("pv").hidden) document.title = "MY DOCTOR PRESCRIPTIONS RECORD"; });
+
+/* ============ INIT ============ */
+function init() {
+  $("patient").addEventListener("change", (e) => selectPatient(e.target.value));
+  $("lock").addEventListener("click", () => (S.admin ? lockAdmin() : unlockDialog()));
+  $("exportBtn").addEventListener("click", openPreview);
+  $("pvClose").addEventListener("click", closePreview);
+  $("pvPrint").addEventListener("click", doPrint);
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !$("pv").hidden && !$("ovRoot").children.length) closePreview(); });
+  $("aAddP").addEventListener("click", () => patientForm(null));
+  $("aEditP").addEventListener("click", () => patientForm(curPatient()));
+  $("aDelP").addEventListener("click", removePatient);
+  $("aAddD").addEventListener("click", () => dateForm(null));
+  $("aReset").addEventListener("click", resetSamples);
+  $("aBackup").addEventListener("click", backup);
+  $("aRestore").addEventListener("click", () => { $("restoreIn").value = ""; $("restoreIn").click(); });
+  $("restoreIn").addEventListener("change", function () { if (this.files[0]) restore(this.files[0]); });
+  Files.open().then(() => {
+    Store.load();
+    if (!Files.persistent) toast("Browser file storage is unavailable: uploads will last only until this page is closed.");
+    selectPatient(Store.patients[0] && Store.patients[0].id);
+  });
+}
+init();
+</script>
+</body>
+</html>
